@@ -1,5 +1,6 @@
 import requests
 import streamlit as st
+import json
 
 def get_odds_from_rapidapi():
     url = "https://odds-api.p.rapidapi.com/v4/sports/basketball_wnba/odds"
@@ -15,7 +16,21 @@ def get_odds_from_rapidapi():
     }
 
     response = requests.get(url, headers=headers, params=querystring)
-    data = response.json()
+
+    try:
+        data = response.json()
+    except ValueError:
+        st.error("❌ Failed to parse JSON from RapidAPI.")
+        return {}
+
+    # TEMP DEBUG: Display full raw JSON
+    st.subheader("🔍 Raw Odds API Response")
+    st.code(json.dumps(data, indent=2))  # shows pretty-printed JSON in app
+
+    # Check if API returned error
+    if isinstance(data, dict) and "message" in data:
+        st.error(f"⚠️ Odds API Error: {data['message']}")
+        return {}
 
     player_odds = {}
     for game in data:
@@ -23,7 +38,7 @@ def get_odds_from_rapidapi():
             for market in bookmaker.get("markets", []):
                 for outcome in market.get("outcomes", []):
                     name = outcome["name"]
-                    stat_type = market["key"].split("_")[-1]  # e.g., 'points', 'rebounds'
+                    stat_type = market["key"].split("_")[-1]
                     odds = outcome["price"]
 
                     if name not in player_odds:
