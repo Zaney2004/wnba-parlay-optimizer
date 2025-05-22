@@ -17,6 +17,7 @@ def calculate_best_parlays(pp_props, fd_odds, stat_filter=None):
         if o1 and o2:
             prob1 = odds_to_prob(o1)
             prob2 = odds_to_prob(o2)
+            # Example EV calculation for a 2-pick parlay with 3x payout multiplier (adjust as needed)
             ev = prob1 * prob2 * 3.0
 
             results.append({

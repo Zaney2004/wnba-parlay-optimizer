@@ -1,45 +1,42 @@
 import requests
 import streamlit as st
-import json
 
 def get_odds_from_rapidapi():
-    url = "https://livesportsodds.p.rapidapi.com/odds"
+    url = "https://odds-api.p.rapidapi.com/v4/sports/basketball_wnba/odds"
     querystring = {
-        "sport": "basketball_wnba",
-        "region": "us"
+        "regions": "us",
+        "markets": "player_points,player_rebounds,player_assists",
+        "oddsFormat": "decimal"
     }
 
     headers = {
         "X-RapidAPI-Key": st.secrets["rapidapi_key"],
-        "X-RapidAPI-Host": "livesportsodds.p.rapidapi.com"
+        "X-RapidAPI-Host": "odds-api.p.rapidapi.com"
     }
 
-    response = requests.get(url, headers=headers, params=querystring)
-
     try:
+        response = requests.get(url, headers=headers, params=querystring)
+        response.raise_for_status()
         data = response.json()
-    except ValueError:
-        st.error("❌ Failed to parse JSON from RapidAPI.")
+    except Exception as e:
+        st.error(f"Failed to fetch odds data: {e}")
         return {}
 
-    # DEBUG: show full API response
-    st.subheader("🔍 Raw Odds API Response")
-    st.code(json.dumps(data, indent=2))
-
-    # You must inspect what 'data' contains to parse it correctly
-    # This is a placeholder structure
     player_odds = {}
-
-    # Replace the below parsing with actual structure once visible
-    for game in data.get("games", []):
-        for market in game.get("markets", []):
-            for outcome in market.get("outcomes", []):
-                name = outcome.get("name")
-                stat_type = market.get("key", "").split("_")[-1]
-                odds = outcome.get("price")
-
-                if name not in player_odds:
-                    player_odds[name] = {}
-                player_odds[name][stat_type] = odds
+    for game in data:
+        bookmakers = game.get("bookmakers", [])
+        for bookmaker in bookmakers:
+            markets = bookmaker.get("markets", [])
+            for market in markets:
+                outcomes = market.get("outcomes", [])
+                stat_key = market.get("key", "")
+                stat_type = stat_key.split("_")[-1] if "_" in stat_key else stat_key
+                for outcome in outcomes:
+                    name = outcome.get("name")
+                    odds = outcome.get("price")
+                    if name:
+                        if name not in player_odds:
+                            player_odds[name] = {}
+                        player_odds[name][stat_type] = odds
 
     return player_odds
