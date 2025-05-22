@@ -15,7 +15,8 @@ def get_prizepicks_wnba_props(stat_filter=None):
     for entry in data["data"]:
         attributes = entry["attributes"]
         stat = attributes["stat_type"]
-        if attributes["league"] == "WNBA" and (stat_filter is None or stat == stat_filter):
+        if attributes.get("league") == "WNBA" and (stat_filter is None or stat == stat_filter):
+
             player_id = entry["relationships"]["new_player"]["data"]["id"]
             wnba_props.append({
                 "player": players.get(player_id),
